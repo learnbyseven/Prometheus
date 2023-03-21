@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prom-nic
+spec:
+  type: NodePort
+  ports:
+    - port: 9113
+      protocol: TCP
+      targetPort: 9113
+      nodePort: 30013
+  selector:
+    app: my-release-nginx-ingress
