@@ -1,2 +1,2 @@
-# Prometheus
+# Grafana - Prom/AlertManager
 Infra
