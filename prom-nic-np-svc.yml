@@ -1,8 +1,8 @@
----
+## Traget to prometheus server runs with NIC 
 apiVersion: v1
 kind: Service
 metadata:
-  name: prom-nic
+  name: prom-nic-np
 spec:
   type: NodePort
   ports:
