@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: nginx-ingress
+data:
+  alerts.yml: |
+    groups:
+    - name: NIC
+      rules:
+      - alert: NginxHighHttp4xxErrorRate
+        expr: sum(rate(nginx_ingress_controller_requests{status=~"4.."}[1m])) / sum(rate(nginx_ingress_controller_requests[1m])) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Nginx high HTTP 4xx error rate (instance {{ $labels.instance }})
+          description: Too many HTTP requests with status 4xx (> 5%)   
+      - alert: NginxHighHttp5xxErrorRate
+        expr: sum(rate(nginx_ingress_controller_requests{status=~"5.."}[1m])) / sum(rate(nginx_ingress_controller_requests[1m])) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Nginx high HTTP 5xx error rate (instance {{ $labels.instance }})
+          description: Too many HTTP requests with status 5xx (> 5%)   
+      - alert: NginxLatencyHigh
+        expr: histogram_quantile(0.99, sum(rate(nginx_ingress_controller_request_duration_seconds_bucket[30m])) by (host, node)) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Nginx latency high (instance {{ $labels.instance }})
+          description: Nginx p99 latency is higher than 10 seconds
+      - alert : http_request_current_Gauge
+        expr: sum(nginx_ingress_nginxplus_http_requests_current) > 10
+        for: 1m
+        labels: 
+          severity: critical
+        annotations:
+          summary: Nginx high HTTP current request rate (instance {{ $labels.instance }})
+          description: Too many HTTP requests (>10)
+      - alert : ssl handshake failed counter
+        expr: sum(nginx_ingress_nginxplus_ssl_handshakes_failed) > 900
+      - alert : active_connections_Gauge
+        expr: sum(nginxplus_connections_active) > 3
+      - alert : status_code_500
+        expr : nginxplus_server_zone_responses_codes{status="500"} > 3
+  prometheus.yml: |
+    global:
+      scrape_interval:     15s
+      evaluation_interval: 15s
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+    rule_files:
+      - /etc/prometheus/alerts.yml 
+    scrape_configs:
+      #- job_name: 'prometheus'
+      #  static_configs:
+      #  - targets: ['localhost:9090']
+      - job_name: 'Nginx-ingress-metrics'
+        static_configs:
+        - targets: ['35.154.229.189:30013']
